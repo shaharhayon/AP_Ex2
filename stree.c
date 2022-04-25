@@ -14,6 +14,9 @@
 #define GRN  "\x1B[32m"
 #define NRM  "\x1B[0m"
 
+int count_directories = 0;
+int count_files = 0;
+
 void resetColor () {
     printf("%s", NRM);
 }
@@ -73,11 +76,22 @@ static int dirTree(const char *pathname, const struct stat *sbuf, int type, stru
     {
         printf("%s", " ");
     }
+    if (type == FTW_D && strcmp(pathname, ".") != 0)
+    {
+        count_directories++;
+    }
+
+    if (type == FTW_F)
+    {
+        count_files++;
+    }
     
     // printf("%0*s", 4 * ((ftwb->level)-1), " ");
-    printf("%s", "├");
-    printf("%s", "── ");         /* Indent suitably */
-    
+    // printf("%s", "├");
+    // printf("%s", "── ");         /* Indent suitably */
+//"└── "
+    printf("%s","├── ");
+    // printf("%s","└── ");
     if (type == FTW_NS) {                  /* Could not stat() file */
         printf("%s", "?");
     } 
@@ -88,22 +102,18 @@ static int dirTree(const char *pathname, const struct stat *sbuf, int type, stru
     printGroup(sbuf->st_gid);
     printSize(sbuf->st_size);
     printFile(pathname, ftwb->base);
-
     return 0;                                   /* Tell nftw() to continue */
 }
 
 main(int argc, char *argv[])
 {
     int flags = 0;
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s directory-path\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    int nftwError = nftw(argv[1], dirTree, 10, flags);
+    const char cwd[1024];
+    int nftwError = nftw(getcwd(cwd, sizeof(cwd)), dirTree, 10, flags);
     if (nftwError == -1) {
         perror("nftw");
         exit(EXIT_FAILURE);
     }
+    printf("\n%d directories, %d files\n", count_directories, count_files);
     exit(EXIT_SUCCESS);
 }
